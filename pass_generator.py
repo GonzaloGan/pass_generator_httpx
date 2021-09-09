@@ -20,9 +20,14 @@ async def get_call(url) -> dict:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
+            assert response.status_code == 200
             deserialized_json = json.loads(response.text)
-    except Exception as e:
-        print(e, file=stderr)
+    except AssertionError:
+        print("Error calling {}. HTTP status code: {}".format(URL, response.status_code), file=stderr)
+        exit(1)
+    except json.decoder.JSONDecodeError as e:
+        print("JSON decode error: {}".format(e), file=stderr)
+        exit(1)
     return deserialized_json
 
 
@@ -80,8 +85,9 @@ async def main() -> None:
         phrase_list = reformat_phrase_list(unformatted_phrase_list)
         shuffle(phrase_list)
         print(get_pass_from_list(phrase_list, 2))
-    except Exception as e:
-        print(e, file=stderr)
+    except KeyError as e:
+        print("Invalid json, not found key: {}".format(e), file=stderr)
+        exit(1)
 
 
 if __name__ == "__main__":
